@@ -26,9 +26,6 @@ type Dep struct {
 
 	// Directories to look for unknown includes
 	IncludeDirs []string
-
-	// Ignore not found dependencies
-	IgnoreNotFoundDependencies bool
 }
 
 // Creates a new Dep struct.
@@ -188,10 +185,6 @@ func (d *Dep) AddIncludeFile(filepath string) error {
 		}
 	}
 
-	if !d.IgnoreNotFoundDependencies {
-		return fmt.Errorf("File not found in include path: %s", filepath)
-	}
-
 	// Add file as if it was found, but without a parsed file and without package references
 	d.Files[filepath] = &FileDep{
 		FilePath:  filepath,
@@ -246,6 +239,23 @@ func (d *Dep) addMessageExtensions(prfile *fproto.ProtoFile, messages []*fproto.
 
 		d.addMessageExtensions(prfile, m.Messages)
 	}
+}
+
+func (d *Dep) CheckDependencies() error {
+	var nfound []string
+
+	// found found dependencies have their "ProtoFile" field nil
+	for _, file := range d.Files {
+		if file.ProtoFile == nil {
+			nfound = append(nfound, file.FilePath)
+		}
+	}
+
+	if len(nfound) > 0 {
+		return fmt.Errorf("Files not found in include path: %s", strings.Join(nfound, ", "))
+	}
+
+	return nil
 }
 
 // Builds a list of valid package names from the dotted name.

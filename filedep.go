@@ -51,7 +51,9 @@ type FileDep struct {
 //
 // If multiple types are found for the same name, an error is issued.
 // If there is this possibility, use the GetTypes method instead.
-func (fd *FileDep) GetType(name string) (*DepType, error) {
+//
+// May return nil if type not found.
+func (fd *FileDep) FindType(name string) (*DepType, error) {
 	t, err := fd.GetTypes(name)
 	if err != nil {
 		return nil, err
@@ -64,6 +66,18 @@ func (fd *FileDep) GetType(name string) (*DepType, error) {
 	}
 
 	return t[0], nil
+}
+
+// Like FindType, but returns an error if not found
+func (fd *FileDep) GetType(name string) (*DepType, error) {
+	t, err := fd.FindType(name)
+	if err != nil {
+		return nil, err
+	}
+	if t == nil {
+		return nil, fmt.Errorf("Type %s not found", name)
+	}
+	return t, nil
 }
 
 // Returns all named types from the dependency, in relation to the current file.

@@ -245,7 +245,7 @@ func printOptionType(pdep *fdep.Dep) {
 }
 
 func Util_PrintType(desc string, parent *fdep.DepType, typeName string) {
-	tp_fld, err := parent.MustGetType(typeName)
+	tp_fld, err := parent.GetType(typeName)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -155,7 +155,9 @@ func (d *DepType) IsScalar() bool {
 //
 // If multiple types are found for the same name, an error is issued.
 // If there is this possibility, use the GetTypes method instead.
-func (d *DepType) GetType(name string) (*DepType, error) {
+//
+// May return nil if type not found.
+func (d *DepType) FindType(name string) (*DepType, error) {
 	t, err := d.GetTypes(name)
 	if err != nil {
 		return nil, err
@@ -170,9 +172,9 @@ func (d *DepType) GetType(name string) (*DepType, error) {
 	return t[0], nil
 }
 
-// Like GetType, but returns an error if not found
-func (d *DepType) MustGetType(name string) (*DepType, error) {
-	t, err := d.GetType(name)
+// Like FindType, but returns an error if not found
+func (d *DepType) GetType(name string) (*DepType, error) {
+	t, err := d.FindType(name)
 	if err != nil {
 		return nil, err
 	}

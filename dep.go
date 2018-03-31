@@ -284,7 +284,9 @@ func (d *Dep) FindPackagesOfName(name string) map[string]string {
 //
 // If multiple types are found for the same name, an error is issued.
 // If there is this possibility, use the GetTypes method instead.
-func (d *Dep) GetType(name string) (*DepType, error) {
+//
+// May return nil if type not found.
+func (d *Dep) FindType(name string) (*DepType, error) {
 	t, err := d.GetTypes(name)
 	if err != nil {
 		return nil, err
@@ -299,9 +301,9 @@ func (d *Dep) GetType(name string) (*DepType, error) {
 	return t[0], nil
 }
 
-// Like GetType, but returns an error if not found
-func (d *Dep) MustGetType(name string) (*DepType, error) {
-	t, err := d.GetType(name)
+// Like FindType, but returns an error if not found
+func (d *Dep) GetType(name string) (*DepType, error) {
+	t, err := d.FindType(name)
 	if err != nil {
 		return nil, err
 	}
@@ -313,7 +315,7 @@ func (d *Dep) MustGetType(name string) (*DepType, error) {
 
 // Gets an extensions for a type from a source package
 func (d *Dep) GetTypeExtension(name string, extensionPkg string) (*DepType, error) {
-	t, err := d.GetType(name)
+	t, err := d.FindType(name)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +325,7 @@ func (d *Dep) GetTypeExtension(name string, extensionPkg string) (*DepType, erro
 
 	for _, ext := range t.ExtensionPackages() {
 		if ext == extensionPkg {
-			return d.GetType(fmt.Sprintf("%s.%s", ext, name))
+			return d.FindType(fmt.Sprintf("%s.%s", ext, name))
 		}
 	}
 
@@ -523,7 +525,7 @@ func (d *Dep) internalGetOptions(optionItem OptionItem, name string, filedep *Fi
 	// find the source type from descriptor.proto
 	srcTypeName := optionItem.MessageName()
 
-	sourceType, err := d.GetType(srcTypeName)
+	sourceType, err := d.FindType(srcTypeName)
 	if err != nil {
 		return nil, fmt.Errorf("Error gettint the source type '%s': %v", srcTypeName, err)
 	}

@@ -7,5 +7,5 @@ type FileProvider interface {
 	HasNext() bool
 
 	// Returns the current file, and advance the internal pointer
-	GetNext() (filepath string, r io.Reader, deptype FileDepType, err error)
+	GetNext() (filepath string, r io.Reader, deptype DepFileType, err error)
 }

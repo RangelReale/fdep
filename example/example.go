@@ -85,7 +85,7 @@ func printTypes(pdep *fdep.Dep) {
 	}
 
 	fmt.Printf("Type 'app.core.User' is in file '%s', package '%s' [name: %s]\n",
-		tp_user.FileDep.FilePath, tp_user.OriginalAlias, tp_user.Name)
+		tp_user.DepFile.FilePath, tp_user.OriginalAlias, tp_user.Name)
 
 	//
 	// app.core.SendMail.Body
@@ -96,7 +96,7 @@ func printTypes(pdep *fdep.Dep) {
 	}
 
 	fmt.Printf("Type 'app.core.SendMail.Body' is in file '%s', package '%s' [name: %s, alias: %s]\n",
-		tp_sendmail_body.FileDep.FilePath, tp_sendmail_body.OriginalAlias, tp_sendmail_body.Name, tp_sendmail_body.Alias)
+		tp_sendmail_body.DepFile.FilePath, tp_sendmail_body.OriginalAlias, tp_sendmail_body.Name, tp_sendmail_body.Alias)
 
 	//
 	// app.core.SendMail.Body in the context of app.Core.Sendmail
@@ -113,7 +113,7 @@ func printTypes(pdep *fdep.Dep) {
 
 	// When getting a type in the context of other type, the alias may be blank if the type is on the same file.
 	fmt.Printf("Type 'Body' in the context of 'app.core.SendMail' is in file '%s', package '%s' [name: %s, alias: %s]\n",
-		tp_sendmail_body2.FileDep.FilePath, tp_sendmail_body2.OriginalAlias, tp_sendmail_body2.Name, tp_sendmail_body2.Alias)
+		tp_sendmail_body2.DepFile.FilePath, tp_sendmail_body2.OriginalAlias, tp_sendmail_body2.Name, tp_sendmail_body2.Alias)
 }
 
 func printFields(pdep *fdep.Dep) {
@@ -194,7 +194,7 @@ func printMessageExtensions(pdep *fdep.Dep, typeName string) {
 	fmt.Printf("Message type name: %s\n", tp_print.FullOriginalName())
 
 	for extpkg, extType := range extensions {
-		fmt.Printf("* EXTENSION: %s [package: %s] [proto path: %s]\n", extType.FullOriginalName(), extpkg, extType.FileDep.FilePath)
+		fmt.Printf("* EXTENSION: %s [package: %s] [proto path: %s]\n", extType.FullOriginalName(), extpkg, extType.DepFile.FilePath)
 		if em, emok := extType.Item.(*fproto.MessageElement); emok {
 			for _, emf := range em.Fields {
 				switch xfld := emf.(type) {
@@ -252,6 +252,6 @@ func Util_PrintType(desc string, parent *fdep.DepType, typeName string) {
 	if tp_fld.IsScalar() {
 		fmt.Printf("\t%sTYPE: SCALAR %s\n", desc, tp_fld.ScalarType.ProtoType())
 	} else {
-		fmt.Printf("\t%sTYPE: %s [%s] - from file: %s\n", desc, tp_fld.FullOriginalName(), tp_fld.Item.ElementTypeName(), tp_fld.FileDep.FilePath)
+		fmt.Printf("\t%sTYPE: %s [%s] - from file: %s\n", desc, tp_fld.FullOriginalName(), tp_fld.Item.ElementTypeName(), tp_fld.DepFile.FilePath)
 	}
 }

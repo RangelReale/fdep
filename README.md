@@ -37,14 +37,14 @@ Package for building relationships between proto files and extracting types, hel
             log.Fatal(err)
         }
 
-        fmt.Printf("Empty type ALIAS=%s NAME=%s in FILE=%s\n", gftype.Alias, gftype.Name, gftype.FileDep.FilePath)
+        fmt.Printf("Empty type ALIAS=%s NAME=%s in FILE=%s\n", gftype.Alias, gftype.Name, gftype.DepFile.FilePath)
 
         ftype, err := parsedep.Files["application/user.proto"].GetType("User")
         if err != nil {
             log.Fatal(err)
         }
 
-        fmt.Printf("User type ALIAS=%s NAME=%s in FILE=%s\n", ftype.Alias, ftype.Name, ftype.FileDep.FilePath)
+        fmt.Printf("User type ALIAS=%s NAME=%s in FILE=%s\n", ftype.Alias, ftype.Name, ftype.DepFile.FilePath)
 	}
 
 ### author

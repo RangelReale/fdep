@@ -9,17 +9,17 @@ import (
 )
 
 // The dependency file type.
-type FileDepType int
+type DepFileType int
 
 const (
 	// Your own project's proto files.
-	DepType_Own FileDepType = iota
+	DepType_Own DepFileType = iota
 
 	// Imported proto file, that are not part of your project.
 	DepType_Imported
 )
 
-func (dt FileDepType) String() string {
+func (dt DepFileType) String() string {
 	switch dt {
 	case DepType_Own:
 		return "OWN"
@@ -30,14 +30,14 @@ func (dt FileDepType) String() string {
 	}
 }
 
-// FileDep represents one .proto file into the dependency.
-type FileDep struct {
+// DepFile represents one .proto file into the dependency.
+type DepFile struct {
 	// The INTERNAL path of the .proto file, for example "google/protobuf/empty.proto"
 	// This is NOT the filesystem path
 	FilePath string
 
 	// The type of the file dependency, whether it is your own file, or an imported one.
-	DepType FileDepType
+	DepType DepFileType
 
 	// The parent dependency list this file is contained.
 	Dep *Dep
@@ -53,8 +53,8 @@ type FileDep struct {
 // If there is this possibility, use the GetTypes method instead.
 //
 // May return nil if type not found.
-func (fd *FileDep) FindType(name string) (*DepType, error) {
-	t, err := fd.GetTypes(name)
+func (df *DepFile) FindType(name string) (*DepType, error) {
+	t, err := df.GetTypes(name)
 	if err != nil {
 		return nil, err
 	}
@@ -69,8 +69,8 @@ func (fd *FileDep) FindType(name string) (*DepType, error) {
 }
 
 // Like FindType, but returns an error if not found
-func (fd *FileDep) GetType(name string) (*DepType, error) {
-	t, err := fd.FindType(name)
+func (df *DepFile) GetType(name string) (*DepType, error) {
+	t, err := df.FindType(name)
 	if err != nil {
 		return nil, err
 	}
@@ -87,8 +87,8 @@ func (fd *FileDep) GetType(name string) (*DepType, error) {
 // appending the name.
 //
 // Use this method if there is a possibility that one name resolves to more than one type.
-func (fd *FileDep) GetTypes(name string) ([]*DepType, error) {
-	t, err := fd.Dep.internalGetTypes(name, fd)
+func (df *DepFile) GetTypes(name string) ([]*DepType, error) {
+	t, err := df.Dep.internalGetTypes(name, df)
 	if err != nil {
 		return nil, err
 	}
@@ -97,10 +97,10 @@ func (fd *FileDep) GetTypes(name string) ([]*DepType, error) {
 	}
 
 	// if not found, search in each dotted scope of the current file's package
-	if fd.ProtoFile != nil && fd.ProtoFile.PackageName != "" {
-		scopes := strings.Split(fd.ProtoFile.PackageName, ".")
+	if df.ProtoFile != nil && df.ProtoFile.PackageName != "" {
+		scopes := strings.Split(df.ProtoFile.PackageName, ".")
 		for si := 1; si <= len(scopes); si++ {
-			t, err = fd.Dep.internalGetTypes(fmt.Sprintf("%s.%s", strings.Join(scopes[:si], "."), name), fd)
+			t, err = df.Dep.internalGetTypes(fmt.Sprintf("%s.%s", strings.Join(scopes[:si], "."), name), df)
 			if err != nil {
 				return nil, err
 			}
@@ -115,45 +115,45 @@ func (fd *FileDep) GetTypes(name string) ([]*DepType, error) {
 	return nil, nil
 }
 
-func (fd *FileDep) GetFileOfName(name string) (*FileDepOfName, error) {
-	return fd.Dep.GetFileOfName(name)
+func (df *DepFile) GetFileOfName(name string) (*DepFileOfName, error) {
+	return df.Dep.GetFileOfName(name)
 }
 
-func (fd *FileDep) GetFilesOfName(name string) ([]*FileDepOfName, error) {
-	return fd.Dep.GetFilesOfName(name)
+func (df *DepFile) GetFilesOfName(name string) ([]*DepFileOfName, error) {
+	return df.Dep.GetFilesOfName(name)
 }
 
-// Checks if the passed FileDep refers to the same file as this one.
-func (fd *FileDep) IsSame(filedep *FileDep) bool {
-	if filedep == nil {
+// Checks if the passed DepFile refers to the same file as this one.
+func (df *DepFile) IsSame(depfile *DepFile) bool {
+	if depfile == nil {
 		return false
 	}
 
-	if fd == filedep {
+	if df == depfile {
 		return true
 	}
 
-	if fd.FilePath == filedep.FilePath && fd.ProtoFile.PackageName == filedep.ProtoFile.PackageName {
+	if df.FilePath == depfile.FilePath && df.ProtoFile.PackageName == depfile.ProtoFile.PackageName {
 		return true
 	}
 
 	return false
 }
 
-func (fd *FileDep) OriginalAlias() string {
-	if fd.ProtoFile != nil {
-		return fd.ProtoFile.PackageName
+func (df *DepFile) OriginalAlias() string {
+	if df.ProtoFile != nil {
+		return df.ProtoFile.PackageName
 	}
 	return ""
 }
 
-// Checks if the passed FileDep refers to the same package as this one.
-func (fd *FileDep) IsSamePackage(filedep *FileDep) bool {
-	if fd == filedep {
+// Checks if the passed DepFile refers to the same package as this one.
+func (df *DepFile) IsSamePackage(depfile *DepFile) bool {
+	if df == depfile {
 		return true
 	}
 
-	if path.Dir(fd.FilePath) == path.Dir(filedep.FilePath) && fd.ProtoFile.PackageName == filedep.ProtoFile.PackageName {
+	if path.Dir(df.FilePath) == path.Dir(depfile.FilePath) && df.ProtoFile.PackageName == depfile.ProtoFile.PackageName {
 		return true
 	}
 
@@ -161,19 +161,19 @@ func (fd *FileDep) IsSamePackage(filedep *FileDep) bool {
 }
 
 // Returns the go package of the file. If there is no "go_package" option, returns the "path" part of the package name.
-func (fd *FileDep) GoPackage() string {
-	for _, o := range fd.ProtoFile.Options {
+func (df *DepFile) GoPackage() string {
+	for _, o := range df.ProtoFile.Options {
 		if o.Name == "go_package" {
 			return o.Value.String()
 		}
 	}
-	return path.Dir(fd.ProtoFile.PackageName)
+	return path.Dir(df.ProtoFile.PackageName)
 }
 
 // Result of GetFilesOfName
-type FileDepOfName struct {
+type DepFileOfName struct {
 	// File
-	FileDep *FileDep
+	DepFile *DepFile
 	// Package name
 	Package string
 	// Rest of name excluding the package name

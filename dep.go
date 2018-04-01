@@ -15,7 +15,7 @@ import (
 // Dep represents an .proto file hierarchy with dependencies between files.
 type Dep struct {
 	// List of files parsed. The file names are the INTERNAL name, like "google/protobuf/empty.proto".
-	Files map[string]*FileDep
+	Files map[string]*DepFile
 
 	// List of packages of the parsed files, with a list of files if a package have more than one.
 	// The list of files should be used on the Files member to find the file itself.
@@ -31,7 +31,7 @@ type Dep struct {
 // Creates a new Dep struct.
 func NewDep() *Dep {
 	return &Dep{
-		Files:      make(map[string]*FileDep),
+		Files:      make(map[string]*DepFile),
 		Packages:   make(map[string][]string),
 		Extensions: make(map[string][]string),
 	}
@@ -50,28 +50,28 @@ func (d *Dep) AddIncludeDir(dir string) error {
 	return nil
 }
 
-// Returns a FileDep given a ProtoFile
-func (d *Dep) FileDepFromProtofile(pfile *fproto.ProtoFile) *FileDep {
-	for _, fd := range d.Files {
-		if fd.ProtoFile == pfile {
-			return fd
+// Returns a DepFile given a ProtoFile
+func (d *Dep) DepFileFromProtofile(pfile *fproto.ProtoFile) *DepFile {
+	for _, df := range d.Files {
+		if df.ProtoFile == pfile {
+			return df
 		}
 	}
 	return nil
 }
 
-// Returns a FileDep given an fproto element
-func (d *Dep) FileDepFromElement(element fproto.FProtoElement) *FileDep {
+// Returns a DepFile given an fproto element
+func (d *Dep) DepFileFromElement(element fproto.FProtoElement) *DepFile {
 	root := fproto.GetRootElement(element)
 	if pfile, pfileok := root.(*fproto.ProtoFile); pfileok {
-		return d.FileDepFromProtofile(pfile)
+		return d.DepFileFromProtofile(pfile)
 	}
 	return nil
 }
 
 // Returns a DepType given an fproto element
 func (d *Dep) DepTypeFromElement(element fproto.FProtoElement) *DepType {
-	fd := d.FileDepFromElement(element)
+	fd := d.DepFileFromElement(element)
 	if fd != nil {
 		return NewDepTypeFromElement(fd, element)
 	}
@@ -81,7 +81,7 @@ func (d *Dep) DepTypeFromElement(element fproto.FProtoElement) *DepType {
 // Add files from one directory recursively, assuming this is a .protobuf root path.
 // Ex: dep.AddPath("/protoc-3.5.1/include", fdep.DepType_Imported)
 // This will add files from google/protobuf directory.
-func (d *Dep) AddPath(dir string, deptype FileDepType) error {
+func (d *Dep) AddPath(dir string, deptype DepFileType) error {
 	return d.AddPathWithRoot("", dir, deptype)
 }
 
@@ -92,7 +92,7 @@ func (d *Dep) AddPath(dir string, deptype FileDepType) error {
 // These 2 commands have exactly the same effect:
 // 		dep.AddPath("/protoc-3.5.1/include", fdep.DepType_Imported)
 // 		dep.AddPathWithRoot("google", "/protoc-3.5.1/include/google", fdep.DepType_Imported)
-func (d *Dep) AddPathWithRoot(currentpath, dir string, deptype FileDepType) error {
+func (d *Dep) AddPathWithRoot(currentpath, dir string, deptype DepFileType) error {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return err
@@ -118,7 +118,7 @@ func (d *Dep) AddPathWithRoot(currentpath, dir string, deptype FileDepType) erro
 
 // Adds a single file to the dependency, assuming the file's path as "currentpath".
 // Ex: dep.AddFile("google/protobuf", "/protoc-3.5.1/include/google/protobuf/empty.proto", fdep.DepType_Imported)
-func (d *Dep) AddFile(currentpath string, filename string, deptype FileDepType) error {
+func (d *Dep) AddFile(currentpath string, filename string, deptype DepFileType) error {
 	file, err := os.Open(filename)
 	if err != nil {
 		return fmt.Errorf("Error parsing file %s: %v", filename, err)
@@ -134,7 +134,7 @@ func (d *Dep) AddFile(currentpath string, filename string, deptype FileDepType) 
 
 // Adds a single file to the dependency, using an reader.
 // Ex: dep.AddReader("google/protobuf/Empty.proto", reader, fdep.DepType_Imported)
-func (d *Dep) AddReader(filepath string, r io.Reader, deptype FileDepType) error {
+func (d *Dep) AddReader(filepath string, r io.Reader, deptype DepFileType) error {
 	// parses the file
 	pfile, err := fproto.Parse(r)
 	if err != nil {
@@ -142,7 +142,7 @@ func (d *Dep) AddReader(filepath string, r io.Reader, deptype FileDepType) error
 	}
 
 	// adds the file to the list
-	d.Files[filepath] = &FileDep{
+	d.Files[filepath] = &DepFile{
 		FilePath:  filepath,
 		DepType:   deptype,
 		Dep:       d,
@@ -186,7 +186,7 @@ func (d *Dep) AddIncludeFile(filepath string) error {
 	}
 
 	// Add file as if it was found, but without a parsed file and without package references
-	d.Files[filepath] = &FileDep{
+	d.Files[filepath] = &DepFile{
 		FilePath:  filepath,
 		DepType:   DepType_Imported,
 		Dep:       d,
@@ -339,8 +339,8 @@ func (d *Dep) GetTypes(name string) ([]*DepType, error) {
 }
 
 // This functions is the one that really does the type finding.
-// If filedep is not-nil, the type is returned in relation to it.
-func (d *Dep) internalGetTypes(name string, filedep *FileDep) ([]*DepType, error) {
+// If depfile is not-nil, the type is returned in relation to it.
+func (d *Dep) internalGetTypes(name string, depfile *DepFile) ([]*DepType, error) {
 	ret := make([]*DepType, 0)
 
 	// check if is scalar
@@ -348,14 +348,14 @@ func (d *Dep) internalGetTypes(name string, filedep *FileDep) ([]*DepType, error
 		ret = append(ret, NewDepTypeScalar(scalar))
 	}
 
-	// locate the name into the own filedep
-	if filedep != nil {
-		for _, t := range filedep.ProtoFile.FindName(name) {
+	// locate the name into the own depfile
+	if depfile != nil {
+		for _, t := range depfile.ProtoFile.FindName(name) {
 			switch t.(type) {
 			case fproto.FieldElementTag:
 				// ignore fields
 			default:
-				ret = append(ret, NewDepType(filedep, "", filedep.OriginalAlias(), name, t))
+				ret = append(ret, NewDepType(depfile, "", depfile.OriginalAlias(), name, t))
 			}
 		}
 	}
@@ -376,9 +376,9 @@ func (d *Dep) internalGetTypes(name string, filedep *FileDep) ([]*DepType, error
 		for _, f := range d.Packages[sppkg] {
 			include_file := false
 
-			if filedep != nil {
+			if depfile != nil {
 				// If a file was passed, only check on the dependencies of the file.
-				for _, ffdep := range filedep.ProtoFile.Dependencies {
+				for _, ffdep := range depfile.ProtoFile.Dependencies {
 					if ffdep == f {
 						include_file = true
 						break
@@ -404,10 +404,10 @@ func (d *Dep) internalGetTypes(name string, filedep *FileDep) ([]*DepType, error
 // Gets a file of a name. Try all package names until a file is found.
 // The type itself that may be on the name is ignored.
 // For example, GetFilesOfName("google.protobuf.Empty") returns:
-//		FileDep: *FileDep{"google/protobuf/empty.proto"}
+//		DepFile: *DepFile{"google/protobuf/empty.proto"}
 //		Package: google.protobuf
 //		Name: Empty
-func (d *Dep) GetFileOfName(name string) (*FileDepOfName, error) {
+func (d *Dep) GetFileOfName(name string) (*DepFileOfName, error) {
 	t, err := d.internalGetFilesOfName(name, nil)
 	if err != nil {
 		return nil, err
@@ -424,20 +424,20 @@ func (d *Dep) GetFileOfName(name string) (*FileDepOfName, error) {
 
 // Gets the files of a name. Try all package names until a file is found.
 // The type itself that may be on the name is ignored.
-func (d *Dep) GetFilesOfName(name string) ([]*FileDepOfName, error) {
+func (d *Dep) GetFilesOfName(name string) ([]*DepFileOfName, error) {
 	return d.internalGetFilesOfName(name, nil)
 }
 
 // Gets the files of a name. Try all package names until a file is found.
 // The type itself that may be on the name is ignored.
-func (d *Dep) internalGetFilesOfName(name string, filedep *FileDep) ([]*FileDepOfName, error) {
+func (d *Dep) internalGetFilesOfName(name string, depfile *DepFile) ([]*DepFileOfName, error) {
 	pkgs := d.FindPackagesOfName(name)
 
 	if len(pkgs) == 0 {
 		return nil, nil
 	}
 
-	found := make(map[string]*FileDepOfName)
+	found := make(map[string]*DepFileOfName)
 
 	// Loop into the found packages.
 	for sppkg, spname := range pkgs {
@@ -445,9 +445,9 @@ func (d *Dep) internalGetFilesOfName(name string, filedep *FileDep) ([]*FileDepO
 		for _, f := range d.Packages[sppkg] {
 			include_file := false
 
-			if filedep != nil {
+			if depfile != nil {
 				// If a file was passed, only check on the dependencies of the file.
-				for _, ffdep := range filedep.ProtoFile.Dependencies {
+				for _, ffdep := range depfile.ProtoFile.Dependencies {
 					if ffdep == f {
 						include_file = true
 						break
@@ -459,8 +459,8 @@ func (d *Dep) internalGetFilesOfName(name string, filedep *FileDep) ([]*FileDepO
 			}
 
 			if include_file {
-				found[f] = &FileDepOfName{
-					FileDep: d.Files[f],
+				found[f] = &DepFileOfName{
+					DepFile: d.Files[f],
 					Package: sppkg,
 					Name:    spname,
 				}
@@ -469,7 +469,7 @@ func (d *Dep) internalGetFilesOfName(name string, filedep *FileDep) ([]*FileDepO
 	}
 
 	// build response
-	var ret []*FileDepOfName
+	var ret []*DepFileOfName
 	for _, fd := range found {
 		ret = append(ret, fd)
 	}
@@ -478,7 +478,7 @@ func (d *Dep) internalGetFilesOfName(name string, filedep *FileDep) ([]*FileDepO
 }
 
 // Get a list for extension packages for a type.
-func (d *Dep) GetExtensions(filedep *FileDep, originalAlias string, name string) []string {
+func (d *Dep) GetExtensions(depfile *DepFile, originalAlias string, name string) []string {
 	var ret []string
 
 	fname := name
@@ -514,9 +514,9 @@ func (d *Dep) GetOptions(optionItem OptionItem, name string) ([]*OptionType, err
 	return d.internalGetOptions(optionItem, name, nil)
 }
 
-func (d *Dep) internalGetOptions(optionItem OptionItem, name string, filedep *FileDep) ([]*OptionType, error) {
+func (d *Dep) internalGetOptions(optionItem OptionItem, name string, depfile *DepFile) ([]*OptionType, error) {
 	// Get packages of passed name
-	depnames, err := d.internalGetFilesOfName(name, filedep)
+	depnames, err := d.internalGetFilesOfName(name, depfile)
 	if err != nil {
 		return nil, err
 	}
@@ -532,7 +532,7 @@ func (d *Dep) internalGetOptions(optionItem OptionItem, name string, filedep *Fi
 	var ret []*OptionType
 	for _, dn := range depnames {
 		// checks if there is an extension message of the source type in the root of the proto file
-		for _, m := range dn.FileDep.ProtoFile.ExtendMessages {
+		for _, m := range dn.DepFile.ProtoFile.ExtendMessages {
 			if m.Name == srcTypeName {
 				include_file := false
 
@@ -552,7 +552,7 @@ func (d *Dep) internalGetOptions(optionItem OptionItem, name string, filedep *Fi
 					ret = append(ret, &OptionType{
 						OptionName:   name,
 						SourceOption: sourceType,
-						Option:       NewDepTypeFromElement(dn.FileDep, m),
+						Option:       NewDepTypeFromElement(dn.DepFile, m),
 						OptionItem:   optionItem,
 						Name:         dn.Name,
 						FieldItem:    field_item,

@@ -9,10 +9,10 @@ import (
 // DepType represents one type into one .proto file.
 type DepType struct {
 	// The file where the type is defined. Can be nil if scalar.
-	FileDep *FileDep
+	DepFile *DepFile
 
 	// The alias of the type. Can vary depending of how the type was requested.
-	// When returned on the FileDep scope, it can be blank if it is contained on
+	// When returned on the DepFile scope, it can be blank if it is contained on
 	// the file itself.
 	Alias string
 
@@ -30,9 +30,9 @@ type DepType struct {
 }
 
 // Creates a new DepType
-func NewDepType(filedep *FileDep, alias string, originalAlias string, name string, item fproto.FProtoElement) *DepType {
+func NewDepType(depfile *DepFile, alias string, originalAlias string, name string, item fproto.FProtoElement) *DepType {
 	return &DepType{
-		FileDep:       filedep,
+		DepFile:       depfile,
 		Alias:         alias,
 		OriginalAlias: originalAlias,
 		Name:          name,
@@ -49,8 +49,8 @@ func NewDepTypeScalar(scalarType fproto.ScalarType) *DepType {
 }
 
 // Creates a new DepType from a file's element.
-func NewDepTypeFromElement(filedep *FileDep, element fproto.FProtoElement) *DepType {
-	return NewDepType(filedep, filedep.OriginalAlias(), filedep.OriginalAlias(), fproto.ScopedName(element), element)
+func NewDepTypeFromElement(depfile *DepFile, element fproto.FProtoElement) *DepType {
+	return NewDepType(depfile, depfile.OriginalAlias(), depfile.OriginalAlias(), fproto.ScopedName(element), element)
 }
 
 // Returns the name plus alias, if available
@@ -60,11 +60,11 @@ func (d *DepType) IsSame(od *DepType) bool {
 		return false
 	}
 
-	if d.FileDep == nil || od.FileDep == nil {
+	if d.DepFile == nil || od.DepFile == nil {
 		return false
 	}
 
-	if d.FileDep.FilePath != od.FileDep.FilePath {
+	if d.DepFile.FilePath != od.DepFile.FilePath {
 		return false
 	}
 
@@ -78,7 +78,7 @@ func (d *DepType) IsSame(od *DepType) bool {
 // Returns the parent deptype, or nil if root
 func (d *DepType) Parent() *DepType {
 	if d.Item != nil && d.Item.ParentElement() != nil {
-		return NewDepTypeFromElement(d.FileDep, d.Item.ParentElement())
+		return NewDepTypeFromElement(d.DepFile, d.Item.ParentElement())
 	}
 	return nil
 }
@@ -106,7 +106,7 @@ func (d *DepType) SkipParents(n int) (*DepType, int) {
 		return nil, 0
 	}
 
-	return NewDepTypeFromElement(d.FileDep, cur), ct
+	return NewDepTypeFromElement(d.DepFile, cur), ct
 }
 
 // Returns the name plus alias, if available
@@ -188,12 +188,12 @@ func (d *DepType) GetType(name string) (*DepType, error) {
 //
 // Use this method if there is a possibility that one name resolves to more than one type.
 func (d *DepType) GetTypes(name string) ([]*DepType, error) {
-	if d.FileDep == nil {
+	if d.DepFile == nil {
 		return nil, nil
 	}
 
 	// first find normally in the full file
-	dt, err := d.FileDep.GetTypes(name)
+	dt, err := d.DepFile.GetTypes(name)
 	if err != nil {
 		return nil, err
 	}
@@ -203,13 +203,13 @@ func (d *DepType) GetTypes(name string) ([]*DepType, error) {
 	}
 
 	// if not found, search in the current item scope
-	return d.FileDep.GetTypes(fmt.Sprintf("%s.%s", d.Name, name))
+	return d.DepFile.GetTypes(fmt.Sprintf("%s.%s", d.Name, name))
 }
 
 // Returns a list of extension packages for this type.
 func (d *DepType) ExtensionPackages() []string {
-	if d.FileDep != nil {
-		return d.FileDep.Dep.GetExtensions(d.FileDep, d.OriginalAlias, d.Name)
+	if d.DepFile != nil {
+		return d.DepFile.Dep.GetExtensions(d.DepFile, d.OriginalAlias, d.Name)
 	}
 	return nil
 }
@@ -238,8 +238,8 @@ func (d *DepType) GetTypeExtensions() (map[string]*DepType, error) {
 
 // Returns a single Deptype for an extensions of this type named by a package.
 func (d *DepType) GetTypeExtension(extensionPkg string) (*DepType, error) {
-	if d.FileDep != nil {
-		return d.FileDep.Dep.GetTypeExtension(d.FullOriginalName(), extensionPkg)
+	if d.DepFile != nil {
+		return d.DepFile.Dep.GetTypeExtension(d.FullOriginalName(), extensionPkg)
 	}
 	return nil, nil
 }

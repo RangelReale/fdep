@@ -378,7 +378,7 @@ func (d *Dep) internalGetTypes(name string, depfile *DepFile) ([]*DepType, error
 
 			if depfile != nil {
 				// If a file was passed, only check on the dependencies of the file.
-				for _, ffdep := range depfile.ProtoFile.Dependencies {
+				for _, ffdep := range depfile.FindDependencies() {
 					if ffdep == f {
 						include_file = true
 						break
@@ -447,7 +447,7 @@ func (d *Dep) internalGetFilesOfName(name string, depfile *DepFile) ([]*DepFileO
 
 			if depfile != nil {
 				// If a file was passed, only check on the dependencies of the file.
-				for _, ffdep := range depfile.ProtoFile.Dependencies {
+				for _, ffdep := range depfile.FindDependencies() {
 					if ffdep == f {
 						include_file = true
 						break

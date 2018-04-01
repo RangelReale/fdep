@@ -170,6 +170,20 @@ func (df *DepFile) GoPackage() string {
 	return path.Dir(df.ProtoFile.PackageName)
 }
 
+// Find all dependencies of file, include public ones from imports.
+func (df *DepFile) FindDependencies() []string {
+	var ret []string
+	if df.ProtoFile != nil {
+		ret = append(ret, df.ProtoFile.Dependencies...)
+		for _, pd := range df.ProtoFile.PublicDependencies {
+			if pdf, ispdf := df.Dep.Files[pd]; ispdf && pdf.ProtoFile != nil {
+				ret = append(ret, pdf.ProtoFile.PublicDependencies...)
+			}
+		}
+	}
+	return ret
+}
+
 // Result of GetFilesOfName
 type DepFileOfName struct {
 	// File

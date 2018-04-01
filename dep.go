@@ -224,20 +224,19 @@ func (d *Dep) addPackage(filepath string) {
 
 // Add message extensions
 func (d *Dep) addExtensions(filepath string) {
-	d.addMessageExtensions(d.Files[filepath].ProtoFile, d.Files[filepath].ProtoFile.Messages)
+	prfile := d.Files[filepath].ProtoFile
+	for _, em := range prfile.CollectExtendMessages() {
+		d.addMessageExtension(prfile, em.(*fproto.MessageElement))
+	}
 }
 
-// Add message extensions
-func (d *Dep) addMessageExtensions(prfile *fproto.ProtoFile, messages []*fproto.MessageElement) {
-	for _, m := range messages {
-		if m.IsExtend {
-			if _, ok := d.Extensions[m.Name]; !ok {
-				d.Extensions[m.Name] = make([]string, 0)
-			}
-			d.Extensions[m.Name] = append(d.Extensions[m.Name], prfile.PackageName)
+// Add message extension
+func (d *Dep) addMessageExtension(prfile *fproto.ProtoFile, extendmessage *fproto.MessageElement) {
+	if extendmessage.IsExtend {
+		if _, ok := d.Extensions[extendmessage.Name]; !ok {
+			d.Extensions[extendmessage.Name] = make([]string, 0)
 		}
-
-		d.addMessageExtensions(prfile, m.Messages)
+		d.Extensions[extendmessage.Name] = append(d.Extensions[extendmessage.Name], prfile.PackageName)
 	}
 }
 
@@ -533,8 +532,8 @@ func (d *Dep) internalGetOptions(optionItem OptionItem, name string, filedep *Fi
 	var ret []*OptionType
 	for _, dn := range depnames {
 		// checks if there is an extension message of the source type in the root of the proto file
-		for _, m := range dn.FileDep.ProtoFile.Messages {
-			if m.IsExtend && m.Name == srcTypeName {
+		for _, m := range dn.FileDep.ProtoFile.ExtendMessages {
+			if m.Name == srcTypeName {
 				include_file := false
 
 				var field_item fproto.FieldElementTag

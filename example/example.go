@@ -52,6 +52,19 @@ func main() {
 	printOptionType(pdep)
 }
 
+// OUTPUT:
+// ==================== PRINT FILES ====================
+// File: app/core/sendmail.proto (OWN) [package: app.core]
+// File: fproto-wrap/time.proto (IMPORTED) [package: fproto_wrap]
+// File: google/protobuf/timestamp.proto (IMPORTED) [package: google.protobuf]
+// File: google/protobuf/descriptor.proto (IMPORTED) [package: google.protobuf]
+// File: google/protobuf/empty.proto (IMPORTED) [package: google.protobuf]
+// File: app/base/pagination.proto (OWN) [package: app.base]
+// File: fproto-wrap/uuid.proto (IMPORTED) [package: fproto_wrap]
+// File: fproto-wrap/jsontag.proto (IMPORTED) [package: fproto_wrap]
+// File: fproto-wrap-headers/headers.proto (IMPORTED) [package: fproto_wrap_headers]
+// File: fproto-wrap-validate/validate.proto (IMPORTED) [package: validate]
+// File: app/core/user.proto (OWN) [package: app.core]
 func printFiles(pdep *fdep.Dep) {
 	fmt.Printf("%s PRINT FILES %s\n", lines, lines)
 	for filepath, file := range pdep.Files {
@@ -59,6 +72,14 @@ func printFiles(pdep *fdep.Dep) {
 	}
 }
 
+// OUTPUT:
+// ==================== PRINT PACKAGES ====================
+// Package: app.base [files: app/base/pagination.proto]
+// Package: fproto_wrap [files: fproto-wrap/uuid.proto, fproto-wrap/time.proto, fproto-wrap/jsontag.proto]
+// Package: google.protobuf [files: google/protobuf/timestamp.proto, google/protobuf/descriptor.proto, google/protobuf/empty.proto]
+// Package: fproto_wrap_headers [files: fproto-wrap-headers/headers.proto]
+// Package: validate [files: fproto-wrap-validate/validate.proto]
+// Package: app.core [files: app/core/sendmail.proto, app/core/user.proto]
 func printPackages(pdep *fdep.Dep) {
 	fmt.Printf("%s PRINT PACKAGES %s\n", lines, lines)
 	for pkg, filelist := range pdep.Packages {
@@ -66,6 +87,9 @@ func printPackages(pdep *fdep.Dep) {
 	}
 }
 
+// OUTPUT:
+// ==================== PRINT EXTENSIONS ====================
+// Extension: google.protobuf.FieldOptions [packages: fproto_wrap, validate]
 func printExtensions(pdep *fdep.Dep) {
 	fmt.Printf("%s PRINT EXTENSIONS %s\n", lines, lines)
 	for ext, pkglist := range pdep.Extensions {
@@ -73,6 +97,11 @@ func printExtensions(pdep *fdep.Dep) {
 	}
 }
 
+// OUTPUT:
+// ==================== PRINT TYPES ====================
+// Type 'app.core.User' is in file 'app/core/user.proto', package 'app.core' [name: User]
+// Type 'app.core.SendMail.Body' is in file 'app/core/sendmail.proto', package 'app.core' [name: SendMail.Body, alias: app.core]
+// Type 'Body' in the context of 'app.core.SendMail' is in file 'app/core/sendmail.proto', package 'app.core' [name: SendMail.Body, alias: ]
 func printTypes(pdep *fdep.Dep) {
 	fmt.Printf("%s PRINT TYPES %s\n", lines, lines)
 
@@ -116,6 +145,20 @@ func printTypes(pdep *fdep.Dep) {
 		tp_sendmail_body2.DepFile.FilePath, tp_sendmail_body2.OriginalAlias, tp_sendmail_body2.Name, tp_sendmail_body2.Alias)
 }
 
+// OUTPUT:
+// ==================== PRINT FIELDS ====================
+// MESSAGE ELEMENT NAME: SendMail
+// * FIELD: sendmail_id - TYPE: fproto_wrap.UUID
+// * FIELD: sent_opt - TYPE: oneof
+// * FIELD: tries - TYPE: int32
+// * FIELD: error_message - TYPE: string
+// * FIELD: last_try_at - TYPE: fproto_wrap.NullTime
+// * FIELD: destination_to - TYPE: SendMailDestination
+// * FIELD: destination_cc - TYPE: SendMailDestination
+// * FIELD: destination_bcc - TYPE: SendMailDestination
+// * FIELD: subject - TYPE: string
+// * FIELD: body - TYPE: Body
+// * FIELD: attach - TYPE: SendMailAttach
 func printFields(pdep *fdep.Dep) {
 	fmt.Printf("%s PRINT FIELDS %s\n", lines, lines)
 
@@ -145,6 +188,27 @@ func printFields(pdep *fdep.Dep) {
 	}
 }
 
+// OUTPUT 1:
+// ==================== PRINT FIELD TYPES: app.core.SendMailAttach ====================
+// Message type name: app.core.SendMailAttach
+// * FIELD: attach_type - TYPE: attach_type
+// TYPE: app.core.SendMailAttach.attach_type [ENUM] - from file: app/core/sendmail.proto
+// * FIELD: content_type - TYPE: string
+// TYPE: SCALAR string
+// * FIELD: headers - TYPE: fproto_wrap_headers.Headers
+// TYPE: fproto_wrap_headers.Headers [MESSAGE] - from file: fproto-wrap-headers/headers.proto
+// * FIELD: filename - TYPE: string
+// TYPE: SCALAR string
+// * FIELD: content_opt - TYPE: oneof
+// ONEOF FIELD: download_url
+// ONEOF FIELD: content
+//
+// OUTPUT 2:
+// ==================== PRINT FIELD TYPES: fproto_wrap_headers.Headers ====================
+// Message type name: fproto_wrap_headers.Headers
+// * FIELD: headers - TYPE: map<string, Values>
+// KEY TYPE: SCALAR string
+// TYPE: fproto_wrap_headers.Headers.Values [MESSAGE] - from file: fproto-wrap-headers/headers.proto
 func printFieldTypes(pdep *fdep.Dep, typeName string) {
 	fmt.Printf("%s PRINT FIELD TYPES: %s %s\n", lines, typeName, lines)
 
@@ -178,6 +242,13 @@ func printFieldTypes(pdep *fdep.Dep, typeName string) {
 	}
 }
 
+// OUTPUT:
+// ==================== PRINT MESSAGE EXTENSIONS: google.protobuf.FieldOptions ====================
+// Message type name: google.protobuf.FieldOptions
+// * EXTENSION: validate.google.protobuf.FieldOptions [package: validate] [proto path: fproto-wrap-validate/validate.proto]
+// FIELD: field [type: FieldValidator]
+// * EXTENSION: fproto_wrap.google.protobuf.FieldOptions [package: fproto_wrap] [proto path: fproto-wrap/jsontag.proto]
+// FIELD: jsontag [type: JSONTag]
 func printMessageExtensions(pdep *fdep.Dep, typeName string) {
 	fmt.Printf("%s PRINT MESSAGE EXTENSIONS: %s %s\n", lines, typeName, lines)
 
@@ -210,6 +281,14 @@ func printMessageExtensions(pdep *fdep.Dep, typeName string) {
 	}
 }
 
+// OUTPUT:
+// ==================== PRINT OPTION TYPE ====================
+// OPTION: validate.field
+// Source option type: google.protobuf.FieldOptions
+// Option type: validate.google.protobuf.FieldOptions
+// Option name: field
+// Field item fieldname: field [type: FieldValidator]
+// TYPE: validate.FieldValidator [MESSAGE] - from file: fproto-wrap-validate/validate.proto
 func printOptionType(pdep *fdep.Dep) {
 	fmt.Printf("%s PRINT OPTION TYPE %s\n", lines, lines)
 

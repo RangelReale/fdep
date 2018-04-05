@@ -22,7 +22,7 @@ Package for building relationships between proto files and extracting types, hel
 	func main() {
 	    parsedep := fdep.NewDep()
 	    
-        err := parsedep.AddPath("/protoc/include", fdep.DepType_Imported)
+        err := parsedep.AddIncludeDir("/protoc/include") // google protobuf include directory (google.protobuf.*)
         if err != nil {
             log.Fatal(err)
         }
@@ -38,6 +38,7 @@ Package for building relationships between proto files and extracting types, hel
         }
 
         fmt.Printf("Empty type ALIAS=%s NAME=%s in FILE=%s\n", gftype.Alias, gftype.Name, gftype.DepFile.FilePath)
+        // Empty type ALIAS=google.protobuf NAME=Empty in FILE=google/protobuf/empty.proto
 
         ftype, err := parsedep.Files["application/user.proto"].GetType("User")
         if err != nil {
@@ -45,6 +46,7 @@ Package for building relationships between proto files and extracting types, hel
         }
 
         fmt.Printf("User type ALIAS=%s NAME=%s in FILE=%s\n", ftype.Alias, ftype.Name, ftype.DepFile.FilePath)
+        // User type ALIAS=application NAME=User in FILE=application/user.proto
 	}
 
 ### author

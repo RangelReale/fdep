@@ -26,6 +26,9 @@ type Dep struct {
 
 	// Directories to look for unknown includes
 	IncludeDirs []string
+
+	// File paths to ignore. This actually checks a prefix of the file name.
+	IgnoreFilePaths []string
 }
 
 // Creates a new Dep struct.
@@ -119,6 +122,13 @@ func (d *Dep) AddPathWithRoot(currentpath, dir string, deptype DepFileType) erro
 // Adds a single file to the dependency, assuming the file's path as "currentpath".
 // Ex: dep.AddFile("google/protobuf", "/protoc-3.5.1/include/google/protobuf/empty.proto", fdep.DepType_Imported)
 func (d *Dep) AddFile(currentpath string, filename string, deptype DepFileType) error {
+	// check if the path is on the ignore list
+	for _, ignore := range d.IgnoreFilePaths {
+		if strings.HasPrefix(currentpath, ignore) {
+			return nil
+		}
+	}
+
 	file, err := os.Open(filename)
 	if err != nil {
 		return fmt.Errorf("Error parsing file %s: %v", filename, err)

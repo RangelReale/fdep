@@ -48,6 +48,13 @@ func NewDepTypeScalar(scalarType fproto.ScalarType) *DepType {
 	}
 }
 
+func NewDepTypeOneOf(depfile *DepFile, item *fproto.OneOfFieldElement) *DepType {
+	return &DepType{
+		DepFile: depfile,
+		Item:    item,
+	}
+}
+
 // Creates a new DepType from a file's element.
 func NewDepTypeFromElement(depfile *DepFile, element fproto.FProtoElement) *DepType {
 	return NewDepType(depfile, depfile.OriginalAlias(), depfile.OriginalAlias(), fproto.ScopedName(element), element)
@@ -127,6 +134,17 @@ func (d *DepType) FullOriginalName() string {
 	}
 }
 
+func (d *DepType) TypeDescription() string {
+	ret := d.FullOriginalName()
+	if ret == "" && d.IsScalar() {
+		ret = d.ScalarType.ProtoType()
+	}
+	if ret == "" && d.IsOneOf() {
+		ret = "oneof (name: " + d.Item.ElementName() + ")"
+	}
+	return ret
+}
+
 // Returns whether the field is pointer.
 func (d *DepType) IsPointer() bool {
 	switch d.Item.(type) {
@@ -149,6 +167,16 @@ func (d *DepType) CanPointer() bool {
 // Returns whether the field is scalar.
 func (d *DepType) IsScalar() bool {
 	return d.ScalarType != nil
+}
+
+// Returns whether the field is an oneof.
+func (d *DepType) IsOneOf() bool {
+	if d.Item != nil {
+		if _, isoo := d.Item.(*fproto.OneOfFieldElement); isoo {
+			return true
+		}
+	}
+	return false
 }
 
 // Returns one named type from the dependency, in relation to the current type.

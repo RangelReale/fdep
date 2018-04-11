@@ -12,6 +12,12 @@ const (
 	ENUMVALUE_OPTION
 	SERVICE_OPTION
 	METHOD_OPTION
+	ONEOF_OPTION
+)
+
+var (
+	OptionItem_All = []OptionItem{FILE_OPTION, MESSAGE_OPTION, FIELD_OPTION, ENUM_OPTION,
+		ENUMVALUE_OPTION, SERVICE_OPTION, METHOD_OPTION, ONEOF_OPTION}
 )
 
 func (ot OptionItem) MessageName() string {
@@ -30,6 +36,8 @@ func (ot OptionItem) MessageName() string {
 		return "google.protobuf.ServiceOptions"
 	case METHOD_OPTION:
 		return "google.protobuf.MethodOptions"
+	case ONEOF_OPTION:
+		return "google.protobuf.OneofOptions"
 	}
 	return "Unknown"
 }

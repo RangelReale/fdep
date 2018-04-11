@@ -495,6 +495,21 @@ func (d *Dep) GetExtensions(depfile *DepFile, originalAlias string, name string)
 	return ret
 }
 
+func (d *Dep) GetAnyOption(name string) (*OptionType, error) {
+	t, err := d.GetAnyOptions(name)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(t) > 1 {
+		return nil, fmt.Errorf("More than one option found for '%s'", name)
+	} else if len(t) == 0 {
+		return nil, nil
+	}
+
+	return t[0], nil
+}
+
 func (d *Dep) GetOption(optionItem OptionItem, name string) (*OptionType, error) {
 	t, err := d.internalGetOptions(optionItem, name, nil)
 	if err != nil {
@@ -512,6 +527,18 @@ func (d *Dep) GetOption(optionItem OptionItem, name string) (*OptionType, error)
 
 func (d *Dep) GetOptions(optionItem OptionItem, name string) ([]*OptionType, error) {
 	return d.internalGetOptions(optionItem, name, nil)
+}
+
+func (d *Dep) GetAnyOptions(name string) ([]*OptionType, error) {
+	var ret []*OptionType
+	for _, optionItem := range OptionItem_All {
+		oi, err := d.GetOptions(optionItem, name)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, oi...)
+	}
+	return ret, nil
 }
 
 func (d *Dep) internalGetOptions(optionItem OptionItem, name string, depfile *DepFile) ([]*OptionType, error) {

@@ -2,6 +2,7 @@ package fdep
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/RangelReale/fproto"
 )
@@ -228,6 +229,21 @@ func (d *DepType) GetTypes(name string) ([]*DepType, error) {
 
 	if dt != nil && len(dt) > 0 {
 		return dt, nil
+	}
+
+	// find using the dotted name recursivelly
+	if d.Name != "" {
+		file_scopes := strings.Split(d.Name, ".")
+		for si := len(file_scopes) - 1; si >= 0; si-- {
+			dt, err := d.DepFile.GetTypes(fmt.Sprintf("%s.%s", strings.Join(file_scopes[:si], "."), name))
+			if err != nil {
+				return nil, err
+			}
+
+			if dt != nil && len(dt) > 0 {
+				return dt, nil
+			}
+		}
 	}
 
 	// if not found, search in the current item scope
